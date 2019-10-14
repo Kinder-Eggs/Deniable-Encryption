@@ -3,9 +3,9 @@ from Crypto.Hash import SHA256, HMAC
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Random import random
 
-HEADER_PREFIX = '\x96\x93\xf3\xcf'  # prefixo das mensagens, pode ser alterado
-EXP_CNT = 10 * 1001  # Expansion count para o hash, maior = mais lento
-MSG_LEN = 2*16  # Tamanho da mensagem, deve ser multiplo de 16 (a mensagem pode ter ate este valor -4)
+HEADER_PREFIX = '\x96\x93\xf3\xcf'  # Header for the messages (changes in size must be modified on line 57 and onwards)
+EXP_CNT = 10 * 1000  # Expansion count value, make it higher so it takes more time (brute force security measure)
+MSG_LEN = 2*16  # Message length will be equivalente to this value - size of the header (must be a multiple of 16)
 
 code = raw_input("Digite d para decriptar ou e para encriptar: ")
 if(code == 'e'):
@@ -14,25 +14,25 @@ if(code == 'e'):
 	message2 = raw_input("Insire a segunda mensagem para ser encriptada: ")
 	password2 = raw_input("Insira a segunda chave: ")
 
-	message = HEADER_PREFIX + message  # Adiciona o prefixo
+	message = HEADER_PREFIX + message
 	message2 = HEADER_PREFIX + message2
 
 
-	while (len(message)%MSG_LEN != 0):  # Completa mensagems com espacos ate MSG_LEN
+	while (len(message)%MSG_LEN != 0):  # Complete messages with blanks until it has the desired size
 		message += " "
 
 	while (len(message2)%MSG_LEN != 0):
 		message2 += " "
 
-	kandm = {password: message, password2: message2}  # Gera um dict com a chave e a mensagem
+	kandm = {password: message, password2: message2}
 
-	for key, msg in kandm.iteritems():  # Cria o hash de cada chave e encripta cada mensagem com ela
+	for key, msg in kandm.iteritems():  # Create each key hash and encrypt the equivalent message with it
 
 		cipher = AES.new(PBKDF2(key, '-'*256, 32, EXP_CNT, prf=lambda p,s: HMAC.new(p,s,SHA256).digest()))  # Password-Based Key Derivation Function 2
 
 		kandm[key] = cipher.encrypt(msg)
 
-	# Transforma o dict em uma unica string completamente ilegivel
+	# Concatenate the encrypted messages creating an unreadable string
 	messages = kandm.values()
 	
 	ciphertext = reduce(lambda x, y: x + y, messages)
@@ -40,7 +40,7 @@ if(code == 'e'):
 	print(ciphertext)
 
 	with open("output.txt", 'w') as f:
-		f.write(ciphertext)  # coloca a mensagem cifrada em um arquivo
+		f.write(ciphertext)  # Save the string on a .txt file
 
 if(code == 'd'):
 	password = raw_input("Insira a chave: ")
@@ -48,7 +48,7 @@ if(code == 'd'):
 	cipher = AES.new(PBKDF2(password, '-'*256, 32, EXP_CNT, prf=lambda p,s: HMAC.new(p,s,SHA256).digest()))  # Password-Based Key Derivation Function 2
 
 	with open("output.txt", 'r') as f:
-		message = f.read()
+		message = f.read()  # Read the archive where the encrypted string is saved
 
 	msg = cipher.decrypt(message)
 
